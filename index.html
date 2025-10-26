@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Go Library Adoption Score</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <!-- Prevent theme flash - apply immediately before body renders -->
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.classList.add('dark-mode-init');
+    }
+  </script>
+  
+  <style>
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --bg-card: #ffffff;
+      --text-primary: #212529;
+      --text-secondary: #6c757d;
+      --border-color: #dee2e6;
+      --accent-color: #212529;
+      --hover-bg: #f8f9fa;
+      --explanation-bg: #f8f9fa;
+      --explanation-border: #212529;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    /* Dark theme init (prevents flash) - apply to all elements */
+    html.dark-mode-init,
+    html.dark-mode-init body {
+      background-color: #2d2d2d !important;
+      color: #f8f9fa !important;
+    }
+    
+    html.dark-mode-init * {
+      border-color: #404040 !important;
+    }
+    
+    html.dark-mode-init .main-container,
+    html.dark-mode-init .category-card,
+    html.dark-mode-init .card,
+    html.dark-mode-init .card-body,
+    html.dark-mode-init .criterion-item {
+      background-color: #242424 !important;
+      color: #f8f9fa !important;
+    }
+    
+    html.dark-mode-init .card-header {
+      background-color: #242424 !important;
+      border-color: #404040 !important;
+    }
+    
+    html.dark-mode-init .switcher-btn,
+    html.dark-mode-init .btn {
+      background-color: #242424 !important;
+      color: #f8f9fa !important;
+      border-color: #404040 !important;
+    }
+
+    body.dark-theme {
+      --bg-primary: #1a1a1a;
+      --bg-secondary: #2d2d2d;
+      --bg-card: #242424;
+      --text-primary: #f8f9fa;
+      --text-secondary: #adb5bd;
+      --border-color: #404040;
+      --accent-color: #f8f9fa;
+      --hover-bg: #2d2d2d;
+      --explanation-bg: #2d2d2d;
+      --explanation-border: #f8f9fa;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    body {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 30px 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .main-container {
+      background-color: var(--bg-primary);
+      border-radius: 8px;
+      box-shadow: var(--shadow-md);
+      padding: 40px;
+      padding-top: 80px;
+      transition: background-color 0.3s;
+      position: relative;
+      overflow: visible;
+    }
+
+    .main-title {
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-bottom: 30px;
+      font-size: 2rem;
+      letter-spacing: -0.5px;
+    }
+
+    .top-controls {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 40px;
+      z-index: 100;
+    }
+
+    .control-group {
+      flex: 1;
+    }
+    
+    .control-group:first-child {
+      display: flex;
+      justify-content: flex-start;
+    }
+    
+    .control-group:last-child {
+      display: flex;
+      justify-content: flex-end;
+    }
+    
+    .center-control {
+      display: flex;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .control-select {
+      min-width: 160px;
+      padding: 10px 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background-color: var(--bg-card);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 35px;
+    }
+    
+    body.dark-theme .control-select {
+      background-color: #2d2d2d;
+      border-color: #495057;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f8f9fa' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    }
+    
+    .control-select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+    
+    body.dark-theme .control-select option {
+      background-color: #2d2d2d;
+      color: #f8f9fa;
+    }
+
+    .category-card {
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      box-shadow: none;
+      transition: all 0.2s;
+      background-color: var(--bg-card);
+      overflow: clip;
+    }
+
+    .category-card:hover {
+      box-shadow: var(--shadow-sm);
+    }
+
+    .category-card .card-header {
+      position: sticky;
+      top: 0;
+      background-color: var(--bg-card);
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 1.25rem;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    body.dark-theme .category-card .card-header {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .category-card .card-body {
+      background-color: var(--bg-card);
+      padding: 1.25rem;
+      overflow: visible;
+    }
+
+    .criterion-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+
+    .criterion-item:hover {
+      background-color: var(--hover-bg);
+    }
+
+    .help-icon {
+      color: var(--text-secondary);
+      cursor: help;
+      font-size: 1rem;
+      margin-left: 6px;
+      transition: color 0.2s;
+    }
+
+    .help-icon:hover {
+      color: var(--accent-color);
+    }
+    
+    .check-icon {
+      color: #0d6efd;
+      cursor: help;
+      font-size: 0.9rem;
+      margin-left: 4px;
+      transition: color 0.2s;
+    }
+
+    .check-icon:hover {
+      color: #0a58ca;
+    }
+
+    .explanation-box {
+      display: none;
+      margin-top: 8px;
+      padding: 14px 16px;
+      background-color: var(--explanation-bg);
+      border-left: 3px solid var(--explanation-border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+      font-weight: 400;
+      font-style: italic;
+    }
+
+    .explanation-box.show {
+      display: block;
+    }
+    
+    body.dark-theme .explanation-box {
+      background-color: rgba(255, 255, 255, 0.05);
+      border-left-color: var(--accent-color);
+    }
+    
+    .check-box {
+      display: none;
+      margin-top: 6px;
+      padding: 10px 14px;
+      background-color: #e7f3ff;
+      border-left: 3px solid #0d6efd;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      color: #084298;
+      line-height: 1.5;
+      font-family: 'Courier New', monospace;
+      font-style: italic;
+    }
+    
+    .check-box.show {
+      display: block;
+    }
+    
+    body.dark-theme .check-box {
+      background-color: rgba(13, 110, 253, 0.1);
+      border-left-color: #0d6efd;
+      color: #6ea8fe;
+    }
+
+    .score-display {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: var(--accent-color);
+      color: var(--bg-primary);
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      transition: all 0.3s;
+      min-width: 80px;
+    }
+    
+    #scoreValue {
+      font-size: 2rem;
+      display: block;
+      line-height: 1;
+      margin-top: 4px;
+    }
+    
+    #scoreValue::after {
+      content: '%';
+      font-size: 1.2rem;
+      margin-left: 2px;
+    }
+
+    body.dark-theme .score-display {
+      background-color: #0d6efd;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .lang-btn-group, .theme-btn-group {
+      margin-bottom: 15px;
+    }
+
+    .form-check-input {
+      border-color: var(--border-color);
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .form-check-input:checked {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+    
+    body.dark-theme .form-check-input {
+      background-color: #2d2d2d;
+      border-color: #495057;
+    }
+    
+    body.dark-theme .form-check-input:checked {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+    }
+    
+    body.dark-theme .form-check-input:focus {
+      border-color: #6ea8fe;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    .form-check-label {
+      color: var(--text-primary);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* Bootstrap tooltip styles */
+    .tooltip {
+      z-index: 9999;
+    }
+    
+    .tooltip-inner {
+      max-width: 400px !important;
+      text-align: left;
+      padding: 12px 15px;
+      background-color: var(--text-primary);
+      color: var(--bg-primary);
+      font-size: 0.875rem;
+      line-height: 1.5;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    body.dark-theme .tooltip-inner {
+      background-color: #2d2d2d;
+      color: #f8f9fa;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    
+    .tooltip-arrow::before {
+      border-top-color: var(--text-primary) !important;
+    }
+    
+    body.dark-theme .tooltip-arrow::before {
+      border-top-color: #2d2d2d !important;
+    }
+
+    .btn {
+      font-weight: 500;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-outline-secondary {
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .btn-outline-secondary:hover {
+      background-color: var(--hover-bg);
+      border-color: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .btn-primary {
+      background-color: var(--accent-color);
+      border-color: var(--accent-color);
+      color: var(--bg-primary);
+    }
+
+    body.dark-theme .btn-primary {
+      background-color: var(--bg-card);
+      border-color: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--text-primary);
+      border-color: var(--text-primary);
+      opacity: 0.9;
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border-color: var(--border-color);
+    }
+
+    .bi-folder-check {
+      margin-right: 6px;
+    }
+
+    /* Tablet styles */
+    @media (max-width: 1024px) and (min-width: 769px) {
+      .main-container {
+        padding: 30px;
+        padding-top: 90px;
+      }
+      
+      .top-controls {
+        padding: 15px 30px;
+      }
+      
+      .score-display {
+        bottom: 15px;
+        left: 15px;
+        padding: 10px 16px;
+        font-size: 0.95rem;
+      }
+      
+      #scoreValue {
+        font-size: 1.8rem;
+      }
+      
+      .category-card .card-body {
+        padding: 1rem;
+      }
+      
+      .tooltip-inner {
+        max-width: 350px !important;
+      }
+    }
+
+    /* Mobile styles */
+    @media (max-width: 768px) {
+      .main-container {
+        padding: 15px;
+        padding-top: 80px; /* Space for single row of dropdowns */
+        padding-bottom: 100px; /* Space for score display */
+      }
+
+      .top-controls {
+        flex-direction: row;
+        gap: 10px;
+        padding: 10px 15px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      
+      .center-control {
+        display: none !important; /* Hide explanations toggle on mobile */
+      }
+      
+      .control-group {
+        width: calc(50% - 5px); /* Two dropdowns side by side */
+      }
+
+      .control-select {
+        font-size: 14px;
+        padding: 10px 12px;
+        width: 100%;
+        min-width: auto;
+      }
+      
+      .main-title {
+        font-size: 1.5rem;
+      }
+      
+      .category-card {
+        margin-bottom: 15px;
+      }
+      
+      .category-card .card-header {
+        top: 0;
+        padding: 0.875rem 1rem;
+        font-size: 0.95rem;
+      }
+      
+      .category-card .card-body {
+        padding: 1rem;
+      }
+      
+      .criterion-item {
+        margin-bottom: 1rem;
+      }
+      
+      .form-check-label {
+        font-size: 0.95rem;
+      }
+      
+      .explanation-box,
+      .check-box {
+        font-size: 0.85rem;
+        padding: 10px 12px;
+      }
+      
+      .score-display {
+        bottom: 15px;
+        left: 15px;
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        min-width: 70px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      }
+      
+      #scoreValue {
+        font-size: 1.6rem;
+      }
+      
+      #scoreValue::after {
+        font-size: 1rem;
+      }
+      
+      #scoreLabel {
+        font-size: 0.75rem;
+      }
+      
+      .tooltip-inner {
+        max-width: 280px !important;
+        font-size: 0.8rem;
+        padding: 10px 12px;
+      }
+      
+      .help-icon,
+      .check-icon {
+        display: none !important; /* Hide icons on mobile */
+      }
+    }
+    
+    /* Extra small mobile devices */
+    @media (max-width: 480px) {
+      .main-container {
+        padding: 10px;
+        padding-top: 75px;
+        padding-bottom: 110px;
+      }
+      
+      .top-controls {
+        padding: 8px 10px;
+        gap: 6px;
+      }
+      
+      .control-group {
+        width: calc(50% - 3px);
+      }
+      
+      .control-select {
+        font-size: 13px;
+        padding: 9px 10px;
+        padding-right: 30px;
+        background-size: 10px;
+      }
+      
+      .score-display {
+        bottom: 10px;
+        left: 10px;
+        padding: 8px 14px;
+        font-size: 0.85rem;
+        min-width: 65px;
+      }
+      
+      #scoreValue {
+        font-size: 1.4rem;
+      }
+      
+      .category-card .card-header {
+        font-size: 0.9rem;
+        padding: 0.75rem 0.875rem;
+      }
+      
+      .form-check-label {
+        font-size: 0.9rem;
+      }
+      
+      .tooltip-inner {
+        max-width: 240px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="main-container">
+      <!-- Top Controls -->
+      <div class="top-controls">
+        <div class="control-group">
+          <select class="control-select" id="langSelect">
+            <!-- Options will be dynamically generated -->
+          </select>
+        </div>
+        
+        <div class="center-control">
+          <button type="button" class="btn btn-primary" id="toggleExplanations">
+            <i class="bi bi-info-circle"></i> <span id="toggleText">Show All Explanations</span>
+          </button>
+        </div>
+        
+        <div class="control-group">
+          <select class="control-select" id="themeSelect">
+            <!-- Options will be dynamically generated -->
+          </select>
+        </div>
+      </div>
+
+      <h1 class="main-title text-center" id="mainTitle">Go Library Adoption Score</h1>
+      
+      <form id="adoptionForm">
+        <!-- Categories will be dynamically inserted here -->
+      </form>
+    </div>
+    </div>
+    
+    <!-- Floating Score Display -->
+    <div class="score-display" id="scoreDisplay">
+      <div id="scoreLabel">Score</div>
+      <div id="scoreValue">0</div>
+    </div>
+  
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Translations Data -->
+  <script src="translations-data.js"></script>
+  
+  <script>
+    // Use translations from external file
+    const translations = window.translationsData || {
+      en: { title: 'Go Library Assessment', categories: [] },
+      ru: { title: 'Оценка Go-пакета', categories: [] },
+      de: { title: 'Go-Bibliothek Bewertung', categories: [] }
+    };
+
+    // State
+    const isMobile = () => window.innerWidth <= 768;
+    
+    const state = {
+      lang: localStorage.getItem('lang') || 'en',
+      theme: localStorage.getItem('theme') || 'light',
+      explanationsVisible: isMobile() // Always true on mobile
+    };
+
+    // Helpers
+    const saveState = (key, value) => {
+      state[key] = value;
+      localStorage.setItem(key, value);
+    };
+
+    const applyTheme = () => {
+      // Remove init class and apply proper theme class
+      $('html').removeClass('dark-mode-init');
+      $('body').toggleClass('dark-theme', state.theme === 'dark');
+    };
+
+    const initLanguageSelect = () => {
+      const $select = $('#langSelect');
+      $select.empty();
+      
+      // Get available languages from translations
+      const availableLanguages = Object.keys(translations);
+      const currentLang = state.lang;
+      const t = translations[currentLang];
+      
+      availableLanguages.forEach(langCode => {
+        const option = $('<option></option>')
+          .val(langCode)
+          .text(t.languageNames[langCode])
+          .prop('selected', langCode === currentLang);
+        $select.append(option);
+      });
+    };
+    
+    const initThemeSelect = () => {
+      const $select = $('#themeSelect');
+      $select.empty();
+      
+      const t = translations[state.lang];
+      const themes = ['light', 'dark'];
+      
+      themes.forEach(theme => {
+        const option = $('<option></option>')
+          .val(theme)
+          .text(t.themeNames[theme])
+          .prop('selected', theme === state.theme);
+        $select.append(option);
+      });
+    };
+
+    const updateUI = () => {
+      const t = translations[state.lang];
+      $('#mainTitle').text(t.title);
+      $('#scoreLabel').text(t.scoreLabel);
+      $('#toggleText').text(state.explanationsVisible ? t.toggleHide : t.toggleShow);
+      
+      // Update dropdown options with current language translations
+      initLanguageSelect();
+      initThemeSelect();
+    };
+
+    const updateScore = () => {
+      const checkboxes = $('input[name="criteria"]');
+      const checked = checkboxes.filter(':checked').length;
+      const total = checkboxes.length;
+      const percentage = total > 0 ? Math.round((checked / total) * 100) : 0;
+      $('#scoreValue').text(`${percentage}`);
+    };
+
+    const buildCriterionItem = (item, catIndex, itemIndex) => {
+      const id = `criterion-${catIndex}-${itemIndex}`;
+      const showClass = state.explanationsVisible ? ' show' : '';
+      
+      return `
+        <div class="criterion-item">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="criteria" id="${id}">
+            <label class="form-check-label" for="${id}">
+              ${item.text}
+              <i class="bi bi-question-circle help-icon" 
+                 data-bs-toggle="tooltip" 
+                 data-bs-placement="top" 
+                 title="${item.explanation}"></i>
+              ${item.check ? '<i class="bi bi-search check-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="' + item.check + '"></i>' : ''}
+            </label>
+          </div>
+          <div class="explanation-box${showClass}">
+            <div><i class="bi"></i> ${item.explanation}</div>
+            <br />
+            <div><i class="bi bi-search"></i> ${item.check}</div>
+          </div>
+        </div>`;
+    };
+
+    const buildCategory = (category, catIndex) => `
+      <div class="card category-card">
+        <div class="card-header">
+          <i class="bi bi-folder-check"></i> ${category.title}
+        </div>
+        <div class="card-body">
+          ${category.items.map((item, i) => buildCriterionItem(item, catIndex, i)).join('')}
+        </div>
+      </div>`;
+
+    const renderForm = () => {
+      const t = translations[state.lang];
+      const formHtml = t.categories.map(buildCategory).join('');
+      
+      // Update page title
+      document.title = t.title;
+      
+      $('#adoptionForm').html(formHtml);
+      updateUI();
+      updateScore();
+      
+      // Init Bootstrap tooltips with options
+      $('[data-bs-toggle="tooltip"]').each((_, el) => {
+        new bootstrap.Tooltip(el, {
+          boundary: 'window',
+          placement: 'top',
+          fallbackPlacements: ['bottom', 'left', 'right'],
+          popperConfig: {
+            strategy: 'fixed',
+            modifiers: [
+              {
+                name: 'preventOverflow',
+                options: {
+                  boundary: 'window',
+                  altAxis: true,
+                  padding: 8
+                }
+              },
+              {
+                name: 'flip',
+                options: {
+                  fallbackPlacements: ['bottom', 'left', 'right'],
+                  padding: 8
+                }
+              }
+            ]
+          }
+        });
+      });
+    };
+
+    // Initialize
+    $(document).ready(() => {
+      // Apply theme
+      applyTheme();
+      
+      // Initialize selects and render form
+      initLanguageSelect();
+      initThemeSelect();
+      renderForm();
+      
+      // Event handlers
+      $('#langSelect').on('change', function() {
+        const lang = $(this).val();
+        saveState('lang', lang);
+        renderForm();
+      });
+      
+      $('#themeSelect').on('change', function() {
+        const theme = $(this).val();
+        saveState('theme', theme);
+        applyTheme();
+        updateUI();
+      });
+
+      $('#toggleExplanations').on('click', () => {
+        if (isMobile()) return; // Don't toggle on mobile
+        state.explanationsVisible = !state.explanationsVisible;
+        $('.explanation-box, .check-box').toggleClass('show');
+        updateUI();
+      });
+
+      // Handle window resize - auto-enable explanations on mobile
+      $(window).on('resize', () => {
+        if (isMobile() && !state.explanationsVisible) {
+          state.explanationsVisible = true;
+          $('.explanation-box, .check-box').addClass('show');
+          updateUI();
+        }
+      });
+
+      $(document).on('change', 'input[name="criteria"]', updateScore);
+    });
+  </script>
+</body>
+</html>

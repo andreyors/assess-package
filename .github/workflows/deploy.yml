@@ -1,0 +1,68 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate translations
+        run: |
+          echo "Validating translations-data.js..."
+          if ! node -c translations-data.js; then
+            echo "❌ Invalid JavaScript: translations-data.js"
+            exit 1
+          fi
+          echo "✅ translations-data.js is valid!"
+
+          echo "Checking translation structure..."
+          node -e "
+            global.window = {};
+            eval(require('fs').readFileSync('translations-data.js', 'utf8'));
+            const langs = Object.keys(window.translationsData);
+            if (langs.length === 0) throw new Error('No languages found');
+            console.log('✅ Found languages:', langs.join(', '));
+            
+            langs.forEach(lang => {
+              const t = window.translationsData[lang];
+              if (!t.title) throw new Error(lang + ': missing title');
+              if (!t.categories) throw new Error(lang + ': missing categories');
+              if (!t.languageNames) throw new Error(lang + ': missing languageNames');
+              if (!t.themeNames) throw new Error(lang + ': missing themeNames');
+              console.log('✅', lang, '- structure valid');
+            });
+            console.log('✅ All translations are structurally valid!');
+          "
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
